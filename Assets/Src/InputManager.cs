@@ -8,7 +8,10 @@ namespace GyroKame
     public class InputManager : MonoBehaviour
     {
         [SerializeField] private TMPro.TextMeshProUGUI shitbox;
-        [SerializeField] private TMPro.TextMeshProUGUI accelerometerBox;
+
+        [SerializeField] private GameObject accX;
+        [SerializeField] private GameObject accY;
+        [SerializeField] private GameObject accZ;
 
         private string previousMessage = "";
 
@@ -29,11 +32,27 @@ namespace GyroKame
             }
         }
 
+
+        //Notes:
+        // scale: 0.0-2.0
+        // x: left-right
+        // y: back-forward
+        // z: upside-downside
+        private void PrintAccelerometer()
+        {
+
+            var accValue = Accelerometer.current.acceleration.ReadValue();
+            //Debug.Log("ACC: " + accValue.ToString());
+            accX.transform.localScale = Vector3.one + (Vector3.up * accValue.x);
+            accY.transform.localScale = Vector3.one + (Vector3.up * accValue.y);
+            accZ.transform.localScale = Vector3.one + (Vector3.up * accValue.z);
+        }
+
         private void Update()
         {
             if (Accelerometer.current.enabled)
             {
-                Debug.Log("ACC: " + Accelerometer.current.acceleration.ReadValue().ToString());
+                PrintAccelerometer();
             } else
             {
                 Debug.LogError("Accelerometer unabled :L");
