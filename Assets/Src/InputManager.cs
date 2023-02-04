@@ -34,7 +34,9 @@ namespace GyroKame
 
 
         //Notes:
-        // scale: 0.0-2.0
+
+        // regular scale: -1.0-1.0
+        // scale might jump with PID?
         // x: left-right
         // y: back-forward
         // z: upside-downside
@@ -43,9 +45,10 @@ namespace GyroKame
 
             var accValue = Accelerometer.current.acceleration.ReadValue();
             //Debug.Log("ACC: " + accValue.ToString());
-            accX.transform.localScale = Vector3.one + (Vector3.up * accValue.x);
-            accY.transform.localScale = Vector3.one + (Vector3.up * accValue.y);
-            accZ.transform.localScale = Vector3.one + (Vector3.up * accValue.z);
+            var baseVec = new Vector3(1.0f, 0.0f, 1.0f);
+            accX.transform.localScale = baseVec + (Vector3.up * accValue.x);
+            accY.transform.localScale = baseVec + (Vector3.up * accValue.y);
+            accZ.transform.localScale = baseVec + (Vector3.up * accValue.z);
         }
 
         private void Update()
