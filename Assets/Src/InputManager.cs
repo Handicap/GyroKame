@@ -53,6 +53,7 @@ namespace GyroKame
 
         private void Update()
         {
+            if (Application.isEditor) return;
             if (Accelerometer.current.enabled)
             {
                 PrintAccelerometer();
