@@ -20,5 +20,11 @@ namespace GyroKame
                 item.gameObject.SetActive(true);
             }
         }
+
+        public override void DestroyBlock()
+        {
+            base.DestroyBlock();
+            ActivateChildren();
+        }
     }
 }
