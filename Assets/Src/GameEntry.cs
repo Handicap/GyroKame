@@ -23,11 +23,18 @@ namespace GyroKame
         [SerializeField] private GameObject graphic;
         [SerializeField] private Material material;
 
+        private Color targetColor = Color.cyan;
+        private Color originalColor;
+
         private int hitsLeft = 3;
+
+        public FileEntry Entry { get => entry; }
+        public GameDirectory Parent { get => parent; set => parent = value; }
+        public int HitsLeft { get => hitsLeft; set => hitsLeft = value; }
 
         public virtual void Initialize(FileEntry entry, GameDirectory parent, float horizontalPosition)
         {
-            this.parent = parent;
+            this.Parent = parent;
             this.entry = entry;
             text.text = entry.name;
             name = entry.ToString();
@@ -41,14 +48,15 @@ namespace GyroKame
             perlinSeed = Random.Range(-1f, 1f);
             gameObject.SetActive(false);
             material = graphic.GetComponent<Renderer>().material;
+            originalColor = material.color;
         }
 
         private int GetDepth(int currentDepth)
         {
             int depth = currentDepth;
-            if (parent != null)
+            if (Parent != null)
             {
-                 depth = parent.GetDepth(currentDepth + 1);
+                 depth = Parent.GetDepth(currentDepth + 1);
             }
             return depth;
         }
@@ -84,14 +92,21 @@ namespace GyroKame
                     material.color = Color.Lerp(flashColor, basicColor, phase);
                     yield return null;
                 }
+                material.color = basicColor;
             }
             StartCoroutine(flash());
         }
 
+        public void SetAsTarget(bool target)
+        {
+            material.color = target ? targetColor : originalColor;
+
+        }
+
         public void OnHit()
         {
-            hitsLeft = hitsLeft - 1;
-            if (hitsLeft < 1)
+            HitsLeft = HitsLeft - 1;
+            if (HitsLeft < 1)
             {
                 this.DestroyBlock();
             } else
@@ -116,7 +131,10 @@ namespace GyroKame
                     material.color = Color.Lerp(basicColor, flashColor, phase);
                     yield return null;
                 }
-                Destroy(this.gameObject);
+                transform.localScale = maxFlash;
+                material.color = basicColor;
+                GetComponent<Collider>().enabled = true;
+                this.gameObject.SetActive(false);
             }
             StartCoroutine(animate());
             GetComponent<Collider>().enabled = false;
@@ -124,6 +142,7 @@ namespace GyroKame
 
         public virtual void MakeVisible()
         {
+            this.gameObject.SetActive(true);
             IEnumerator animate()
             {
                 float phase = 0f;
@@ -135,6 +154,7 @@ namespace GyroKame
                     phase += Time.deltaTime * speed;
                     yield return null;
                 }
+                transform.localScale = Vector3.one;
             }
             StartCoroutine(animate());
         }
@@ -151,6 +171,8 @@ namespace GyroKame
                     phase += Time.deltaTime * speed;
                     yield return null;
                 }
+                transform.localScale = Vector3.one;
+                this.gameObject.SetActive(false);
             }
             StartCoroutine(animate());
         }

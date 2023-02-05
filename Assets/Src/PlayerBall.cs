@@ -13,9 +13,11 @@ namespace GyroKame
         private bool ready = true;
         Vector3 startGrav;
 
-        public event Action OnBallLost;
+        public event Action OnBallLost, OnBallDropped;
 
         private Vector3 startPos;
+
+        public bool Ready { get => ready; set => ready = value; }
 
         // Start is called before the first frame update
         void Start()
@@ -28,38 +30,40 @@ namespace GyroKame
         public void Drop()
         {
             Physics.gravity = startGrav;
-            ready = false;
+            Ready = false;
+            body.isKinematic = false;
+            OnBallDropped?.Invoke();
         }
 
         public void ResetBall()
         {
             Debug.Log("Reset ball");
-            ready = true;
             Physics.gravity = Vector3.zero;
             transform.position = startPos;
+            body.isKinematic = true;
         }
 
         // Update is called once per frame
         void Update()
         {
-            if (Input.GetKey(KeyCode.Space) && ready)
+            if (Input.GetKey(KeyCode.Space) && Ready)
             {
                 Drop();
             }
             // for dev
             if (Input.GetKey(KeyCode.A))
             {
-                Vector3 newGrav = new Vector3(Physics.gravity.x - 0.05f, Physics.gravity.y, Physics.gravity.z).normalized * 10f;
+                Vector3 newGrav = new Vector3(Physics.gravity.x - 0.15f, Physics.gravity.y, Physics.gravity.z).normalized * 10f;
                 Physics.gravity = newGrav;
             } else if (Input.GetKey(KeyCode.D))
             {
-                Vector3 newGrav = new Vector3(Physics.gravity.x + 0.05f, Physics.gravity.y, Physics.gravity.z).normalized * 10f;
+                Vector3 newGrav = new Vector3(Physics.gravity.x + 0.15f, Physics.gravity.y, Physics.gravity.z).normalized * 10f;
                 Physics.gravity = newGrav;
             }
             if (transform.position.y < minDepth)
             {
                 OnBallLost?.Invoke();
-                ResetBall();
+                //ResetBall();
             }
         }
         private void OnCollisionEnter(Collision collision)

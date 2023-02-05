@@ -15,15 +15,13 @@ namespace GyroKame
         [SerializeField] private float entryHorizontalDistance = 1f;
         private List<GameEntry> entries = new List<GameEntry>();
 
-        public event Action<List<GameEntry>> OnLevelReady;
+        public event Action<List<GameEntry>, GameDirectory> OnLevelReady;
         public void GenerateLevel(FileEntries directoryTree)
         {
             Debug.Log("Level generation");
             GameDirectory rootDir;
             rootDir = CreateDirectory(directoryTree.contents[0], 0);
-            rootDir.gameObject.SetActive(true);
-            rootDir.ActivateChildren();
-            OnLevelReady?.Invoke(entries);
+            OnLevelReady?.Invoke(entries, rootDir);
         }
 
         private GameDirectory CreateDirectory(FileEntry entry, float horizontalPosition, GameDirectory parent = null)
