@@ -7,9 +7,9 @@ namespace GyroKame
     [System.Serializable]
     public class FileEntry
     {
-        [SerializeField] private string type;
-        [SerializeField] private string name;
-        [SerializeField] private List<FileEntry> contents;
+        [SerializeField] public string type;
+        [SerializeField] public string name;
+        [SerializeField] public List<FileEntry> contents;
 
         public override string ToString()
         {
@@ -20,6 +20,6 @@ namespace GyroKame
     [System.Serializable]
     public class FileEntries
     {
-        [SerializeField] private List<FileEntry> contents;
+        [SerializeField] public List<FileEntry> contents;
     }
 }

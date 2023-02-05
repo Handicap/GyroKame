@@ -8,7 +8,8 @@ namespace GyroKame
 {
     public class JsonAnalyzer : MonoBehaviour
     {
-        [SerializeField] private FileEntries files;
+        private FileEntries files;
+        [SerializeField] private LevelGenerator generator;
 
         void Start()
         {
@@ -18,6 +19,10 @@ namespace GyroKame
             //var entries = JsonConvert.DeserializeObject<List<FileEntry>>(output);
             files = JsonUtility.FromJson<FileEntries>(output);
             Debug.Log("Json read");
+            if (generator != null)
+            {
+                generator.GenerateLevel(files);
+            }
         }
     }
 }
