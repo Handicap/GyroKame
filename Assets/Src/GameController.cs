@@ -39,7 +39,7 @@ namespace GyroKame
 
             livesText.text = lives.ToString();
             scoreText.text = score.ToString();
-            ball.Ready = true;
+            //ball.Ready = true;
         }
 
         private void Ball_OnBallDropped()
@@ -65,7 +65,7 @@ namespace GyroKame
 
                 foreach (var item in breadCrumbs)
                 {
-                    GameDirectory dir = item.GetComponent<GameDirectory>();
+                    GameDirectory dir = item.gameObject.GetComponent<GameDirectory>();
                     if (dir != null)
                     {
                         dir.ActivateChildren();
@@ -103,6 +103,7 @@ namespace GyroKame
             lives--;
             livesText.text = lives.ToString();
             ShowAnswer();
+            ball.ResetBall();
         }
 
         private void Generator_OnLevelReady(List<GameEntry> obj, GameDirectory root)
@@ -137,6 +138,7 @@ namespace GyroKame
             }
             currentTarget.SetAsTarget(true);
             objectiveText.text = "Find " + currentTarget.Entry.name + " in " + breadCrumbs[breadCrumbs.Count - 2].name;
+            ShowAnswer();
         }
     }
 }

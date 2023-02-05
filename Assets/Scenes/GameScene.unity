@@ -841,7 +841,7 @@ MonoBehaviour:
   lives: 3
   maxLives: 3
   score: 0
-  answerTime: 5
+  answerTime: 1
 --- !u!4 &730694022
 Transform:
   m_ObjectHideFlags: 0
