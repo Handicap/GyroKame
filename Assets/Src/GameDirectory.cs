@@ -8,14 +8,16 @@ namespace GyroKame
     {
         [SerializeField] private List<GameEntry> children = new List<GameEntry>();
 
+        public List<GameEntry> Children { get => children; }
+
         public void AddToChildren(GameEntry entry)
         {
-            children.Add(entry);
+            Children.Add(entry);
         }
 
         public void ActivateChildren()
         {
-            foreach (var item in children)
+            foreach (var item in Children)
             {
                 item.gameObject.SetActive(true);
                 item.MakeVisible();

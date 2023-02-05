@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace GyroKame
 {
@@ -26,11 +27,43 @@ namespace GyroKame
         private Color targetColor = Color.cyan;
         private Color originalColor;
 
-        private int hitsLeft = 3;
+        [SerializeField] Color flashTargetColor;
+
+        [SerializeField] private int maxHealth = 3;
+        private int health = 3;
 
         public FileEntry Entry { get => entry; }
         public GameDirectory Parent { get => parent; set => parent = value; }
-        public int HitsLeft { get => hitsLeft; set => hitsLeft = value; }
+        public int Health { get => health; set => health = value; }
+
+        public bool Locked { get; set; }
+
+        [SerializeField] private AudioSource bounce, cleared;
+
+        [SerializeField] private Coroutine flashRoutine;
+
+        public List<GameEntry> Siblings { get
+            {
+                if (parent)
+                {
+                    List<GameEntry> siblings = new List<GameEntry>(parent.Children);
+                    siblings.Remove(this);
+                    return siblings;
+                }
+                return new List<GameEntry>();
+            }
+        }
+
+        public event Action<GameEntry> OnBlockDestroyed;
+
+        public void ResetEntry()
+        {
+            Locked = false;
+            material.color = originalColor;
+            graphic.transform.localScale = Vector3.one;
+            transform.localScale = Vector3.one;
+            Health = 3;
+        }
 
         public virtual void Initialize(FileEntry entry, GameDirectory parent, float horizontalPosition)
         {
@@ -45,13 +78,14 @@ namespace GyroKame
             }
             transform.position = new Vector3(horizontalPosition, 4f * -GetDepth(0), 0);
             originalPosition = transform.position;
-            perlinSeed = Random.Range(-1f, 1f);
+            perlinSeed = UnityEngine.Random.Range(-1f, 1f);
             gameObject.SetActive(false);
             material = graphic.GetComponent<Renderer>().material;
             originalColor = material.color;
+            health = maxHealth;
         }
 
-        private int GetDepth(int currentDepth)
+        public int GetDepth(int currentDepth = 0)
         {
             int depth = currentDepth;
             if (Parent != null)
@@ -75,7 +109,8 @@ namespace GyroKame
                 float phase = 0f;
                 float speed = 10f;
                 Vector3 maxFlash = Vector3.one * 1.5f;
-                Color basicColor = material.color;
+                float hpLeft = (float) health / (float) maxHealth;
+                Color basicColor = Color.Lerp(flashTargetColor, originalColor, hpLeft);
                 Color flashColor = Color.white;
                 while (phase < 1f)
                 {
@@ -92,9 +127,15 @@ namespace GyroKame
                     material.color = Color.Lerp(flashColor, basicColor, phase);
                     yield return null;
                 }
+                bounce.Play();
                 material.color = basicColor;
+                flashRoutine = null;
             }
-            StartCoroutine(flash());
+            if (flashRoutine != null)
+            {
+                StopCoroutine(flashRoutine);
+            }
+            flashRoutine = StartCoroutine(flash());
         }
 
         public void SetAsTarget(bool target)
@@ -105,10 +146,11 @@ namespace GyroKame
 
         public void OnHit()
         {
-            HitsLeft = HitsLeft - 1;
-            if (HitsLeft < 1)
+            if (Locked) return;
+            Health = Health - 1;
+            if (Health < 1)
             {
-                this.DestroyBlock();
+                DestroyBlock();
             } else
             {
                 FlashBlock();
@@ -122,22 +164,45 @@ namespace GyroKame
                 float phase = 0f;
                 float speed = 10f;
                 Vector3 maxFlash = new Vector3(3f, 0f, 0f);
-                Color basicColor = material.color;
                 Color flashColor = Color.white;
                 while (phase < 1f)
                 {
                     transform.localScale = Vector3.Lerp(Vector3.one, maxFlash, phase);
                     phase += Time.deltaTime * speed;
-                    material.color = Color.Lerp(basicColor, flashColor, phase);
+                    material.color = Color.Lerp(originalColor, flashColor, phase);
                     yield return null;
                 }
                 transform.localScale = maxFlash;
-                material.color = basicColor;
+                material.color = originalColor;
                 GetComponent<Collider>().enabled = true;
                 this.gameObject.SetActive(false);
+                OnBlockDestroyed?.Invoke(this);
+                cleared.Play();
             }
             StartCoroutine(animate());
             GetComponent<Collider>().enabled = false;
+        }
+        public virtual void LockBlock()
+        {
+            IEnumerator animate()
+            {
+                float phase = 0f;
+                float speed = 10f;
+                Vector3 maxFlash = new Vector3(1.5f, 1f, 1f);
+                Color flashColor = Color.grey;
+                while (phase < 1f)
+                {
+                    graphic.transform.localScale = Vector3.Lerp(Vector3.one, maxFlash, phase);
+                    phase += Time.deltaTime * speed;
+                    material.color = Color.Lerp(originalColor, flashColor, phase);
+                    yield return null;
+                }
+                Locked = true;
+                transform.localScale = maxFlash;
+                material.color = flashColor;
+                
+            }
+            StartCoroutine(animate());
         }
 
         public virtual void MakeVisible()
@@ -150,11 +215,11 @@ namespace GyroKame
                 Vector3 startScale = new Vector3(0.25f, 1f, 0f);
                 while (phase < 1f)
                 {
-                    transform.localScale = Vector3.Lerp(startScale, Vector3.one, phase);
+                    graphic.transform.localScale = Vector3.Lerp(startScale, Vector3.one, phase);
                     phase += Time.deltaTime * speed;
                     yield return null;
                 }
-                transform.localScale = Vector3.one;
+                graphic.transform.transform.localScale = Vector3.one;
             }
             StartCoroutine(animate());
         }
@@ -167,11 +232,11 @@ namespace GyroKame
                 Vector3 startScale = new Vector3(0.25f, 1f, 0f);
                 while (phase < 1f)
                 {
-                    transform.localScale = Vector3.Lerp(Vector3.one, startScale, phase);
+                    graphic.transform.localScale = Vector3.Lerp(Vector3.one, startScale, phase);
                     phase += Time.deltaTime * speed;
                     yield return null;
                 }
-                transform.localScale = Vector3.one;
+                graphic.transform.localScale = Vector3.one;
                 this.gameObject.SetActive(false);
             }
             StartCoroutine(animate());

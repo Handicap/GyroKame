@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace GyroKame
 {
@@ -18,9 +19,13 @@ namespace GyroKame
 
         [SerializeField] private GameObject directionalHint;
 
-        [SerializeField] private CameraController camera;
+        [SerializeField] private CameraController cameraController;
 
         private GameEntry currentTarget;
+        private List<GameEntry> currentPath;
+        private List<GameEntry> currentPathLeft = new List<GameEntry>();
+
+        List<float> levels = new List<float>();
 
         private List<GameEntry> entries;
 
@@ -30,6 +35,9 @@ namespace GyroKame
         [SerializeField] private int score = 0;
 
         [SerializeField] private float answerTime = 1.5f;
+
+        [SerializeField] private AudioSource cleared;
+
 
         public void Start()
         {
@@ -54,17 +62,10 @@ namespace GyroKame
 
             IEnumerator routine()
             {
-                List<GameEntry> breadCrumbs = new List<GameEntry>();
-                breadCrumbs.Add(currentTarget);
-                GameEntry nextInHierarchy = currentTarget.Parent;
-                while (nextInHierarchy != null)
-                {
-                    breadCrumbs.Add(nextInHierarchy);
-                    nextInHierarchy = nextInHierarchy.Parent;
-                }
 
-                foreach (var item in breadCrumbs)
+                for (int i = 0; i < currentPath.Count; i++)
                 {
+                    var item = currentPath[i];
                     GameDirectory dir = item.gameObject.GetComponent<GameDirectory>();
                     if (dir != null)
                     {
@@ -72,20 +73,24 @@ namespace GyroKame
                     }
                 }
 
-                foreach (var item in breadCrumbs)
+                for (int i = 0; i < currentPath.Count; i++)
                 {
-                    camera.Target = item.transform;
+                    var item = currentPath[i];
+                    cameraController.Target = item.transform;
                     yield return new WaitForSeconds(answerTime);
                 }
                 foreach (var item in entries)
                 {
+                    item.ResetEntry();
                     item.gameObject.SetActive(false);
                 }
-                camera.Target = ball.transform;
+                cameraController.Target = ball.transform;
                 Debug.Log("Finished answer");
                 rootDir.MakeVisible();
                 rootDir.ActivateChildren();
                 startTip.SetActive(true);
+                currentPathLeft.Clear();
+                currentPathLeft.AddRange(currentPath);
                 ball.Ready = true;
             }
             StartCoroutine(routine());
@@ -97,9 +102,7 @@ namespace GyroKame
             foreach (var item in entries)
             {
                 item.gameObject.SetActive(false);
-                item.HitsLeft = 3;
             }
-            rootDir.HitsLeft = 3;
             lives--;
             livesText.text = lives.ToString();
             ShowAnswer();
@@ -110,16 +113,42 @@ namespace GyroKame
         {
             rootDir = root;
             entries = obj;
+            foreach (var item in entries)
+            {
+                item.OnBlockDestroyed += Item_OnBlockDestroyed;
+            }
+            Debug.Log("Created " + obj.Count + " nodes");
             PickTarget();
             rootDir.MakeVisible();
             rootDir.ActivateChildren();
         }
 
+        private void Item_OnBlockDestroyed(GameEntry obj)
+        {
+            if (currentPathLeft.Contains(obj))
+            {
+                currentPathLeft.Remove(obj);
+            }
+            foreach (var item in obj.Siblings)
+            {
+                item.LockBlock();
+            }
+            if (obj == currentTarget)
+            {
+                score += obj.GetDepth();
+                
+            }
+            score += 1;
+            cleared.Play();
+        }
+
         private void Update()
         {
-            if (currentTarget != null)
+            if (currentTarget != null && currentPathLeft.Count > 0)
             {
-                directionalHint.transform.position = Vector3.MoveTowards(ball.transform.position, currentTarget.transform.position, 3);
+                var target = currentPathLeft.Last();
+                directionalHint.transform.position = Vector3.MoveTowards(ball.transform.position, target.transform.position, 3);
+                directionalHint.transform.LookAt(target.transform);
             }
         }
 
@@ -131,12 +160,15 @@ namespace GyroKame
 
             List<GameEntry> breadCrumbs = new List<GameEntry>();
             GameEntry nextInHierarchy = currentTarget.Parent;
+            breadCrumbs.Add(currentTarget);
             while (nextInHierarchy != null)
             {
                 breadCrumbs.Add(nextInHierarchy);
                 nextInHierarchy = nextInHierarchy.Parent;
             }
             currentTarget.SetAsTarget(true);
+            currentPath = breadCrumbs;
+            currentPathLeft.AddRange(breadCrumbs);
             objectiveText.text = "Find " + currentTarget.Entry.name + " in " + breadCrumbs[breadCrumbs.Count - 2].name;
             ShowAnswer();
         }
