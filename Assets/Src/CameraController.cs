@@ -26,11 +26,9 @@ namespace GyroKame
             Vector3 targetVec = new Vector3(Target.transform.position.x, Target.transform.position.y, maxZoom);
             // speed up a bit with longer distances
             float distance = Vector3.Distance(targetVec, transform.position);
-            float step = Time.deltaTime;
-            if (distance > 20f)
-            {
-                step *= 2.0f;
-            }
+            float distanceFactor = distance / 10f;
+            float step = Time.deltaTime * distanceFactor;
+            
             transform.position = Vector3.Lerp(transform.position, targetVec, step);
         }
 

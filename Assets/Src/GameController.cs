@@ -36,7 +36,7 @@ namespace GyroKame
 
         [SerializeField] private float answerTime = 1.5f;
 
-        [SerializeField] private AudioSource cleared, success;
+        [SerializeField] private AudioSource cleared, success, wrongBlock;
 
 
         public void Start()
@@ -73,23 +73,32 @@ namespace GyroKame
                     }
                 }
 
+                rootDir.gameObject.SetActive(true);
+                rootDir.ResetEntry();
+
+                foreach (var item in entries)
+                {
+                    item.ResetEntry();
+                }
+
                 for (int i = 0; i < currentPath.Count; i++)
                 {
                     var item = currentPath[i];
                     cameraController.Target = item.transform;
-                    yield return new WaitForSeconds(answerTime / 2f);
+                    yield return new WaitForSeconds(answerTime / 3f);
+                    yield return new WaitForSeconds(answerTime / 3f);
                     item.HighlightFlashBlock();
-                    yield return new WaitForSeconds(answerTime / 2f);
+                    yield return new WaitForSeconds(answerTime / 3f);
                 }
                 foreach (var item in entries)
                 {
-                    item.ResetEntry();
+                    //item.ResetEntry();
                     item.gameObject.SetActive(false);
                 }
                 cameraController.Target = ball.transform;
                 Debug.Log("Finished answer");
                 rootDir.MakeVisible();
-                rootDir.ActivateChildren();
+                //rootDir.ActivateChildren();
                 startTip.SetActive(true);
                 currentPathLeft.Clear();
                 currentPathLeft.AddRange(currentPath);
@@ -122,7 +131,7 @@ namespace GyroKame
             Debug.Log("Created " + obj.Count + " nodes");
             PickTarget();
             rootDir.MakeVisible();
-            rootDir.ActivateChildren();
+            //rootDir.ActivateChildren();
         }
 
         private void Item_OnBlockDestroyed(GameEntry obj)
@@ -141,9 +150,12 @@ namespace GyroKame
                 Debug.Log("Target found!");
                 success.Play();
                 ball.VictoryAnimation();
-            } else
+            } else if (currentPath.Contains(obj))
             {
                 cleared.Play();
+            } else
+            {
+                wrongBlock.Play();
             }
             score += 1;
             scoreText.text = score.ToString();
@@ -154,9 +166,15 @@ namespace GyroKame
             if (currentTarget != null && currentPathLeft.Count > 0)
             {
                 var target = currentPathLeft.Last();
-                directionalHint.transform.position = Vector3.MoveTowards(ball.transform.position, target.transform.position, 3);
-                directionalHint.transform.LookAt(target.transform);
+                directionalHint.transform.position = Vector3.ClampMagnitude(Vector3.Lerp(ball.transform.position, target.transform.position, 0.5f), 2f);
+                directionalHint.transform.LookAt(target.transform, Vector3.forward);
             }
+            /*
+            if (currentPathLeft.Count > 0 && currentPathLeft.Last().transform.position.y > ball.transform.position.y)
+            {
+                currentPathLeft.RemoveAt(currentPathLeft.Count - 1);
+            }
+            */
         }
 
         private void PickTarget()

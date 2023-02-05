@@ -36,7 +36,7 @@ namespace GyroKame
             Ready = false;
             body.isKinematic = false;
             OnBallDropped?.Invoke();
-            body.AddForce(Vector3.up * 10f, ForceMode.Impulse);
+            body.AddForce(Vector3.up * 5f, ForceMode.Impulse);
             start.Play();
         }
 
