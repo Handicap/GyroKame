@@ -36,7 +36,7 @@ namespace GyroKame
 
         [SerializeField] private float answerTime = 1.5f;
 
-        [SerializeField] private AudioSource cleared;
+        [SerializeField] private AudioSource cleared, success;
 
 
         public void Start()
@@ -77,7 +77,9 @@ namespace GyroKame
                 {
                     var item = currentPath[i];
                     cameraController.Target = item.transform;
-                    yield return new WaitForSeconds(answerTime);
+                    yield return new WaitForSeconds(answerTime / 2f);
+                    item.HighlightFlashBlock();
+                    yield return new WaitForSeconds(answerTime / 2f);
                 }
                 foreach (var item in entries)
                 {
@@ -136,10 +138,15 @@ namespace GyroKame
             if (obj == currentTarget)
             {
                 score += obj.GetDepth();
-                
+                Debug.Log("Target found!");
+                success.Play();
+                ball.VictoryAnimation();
+            } else
+            {
+                cleared.Play();
             }
             score += 1;
-            cleared.Play();
+            scoreText.text = score.ToString();
         }
 
         private void Update()
@@ -156,7 +163,7 @@ namespace GyroKame
         {
             int randomIndex = Random.Range(0, entries.Count);
             currentTarget = entries[randomIndex];
-            Debug.Log("Random target is " + currentTarget);
+            Debug.Log("Random target is " + currentTarget + " of " + entries.Count);
 
             List<GameEntry> breadCrumbs = new List<GameEntry>();
             GameEntry nextInHierarchy = currentTarget.Parent;

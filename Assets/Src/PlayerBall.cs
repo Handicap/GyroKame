@@ -10,6 +10,7 @@ namespace GyroKame
     {
         [SerializeField] private Rigidbody body;
         [SerializeField] private float minDepth = -100f;
+        [SerializeField] private float victoryTime = 4f;
         [SerializeField] private AudioSource fail, start;
         private bool ready = true;
         Vector3 startGrav;
@@ -35,7 +36,7 @@ namespace GyroKame
             Ready = false;
             body.isKinematic = false;
             OnBallDropped?.Invoke();
-            body.AddForce(Vector3.up * 10f);
+            body.AddForce(Vector3.up * 10f, ForceMode.Impulse);
             start.Play();
         }
 
@@ -45,7 +46,26 @@ namespace GyroKame
             Physics.gravity = Vector3.zero;
             transform.position = startPos;
             body.isKinematic = true;
-            fail.Play();
+            if (!ready)
+            {
+                fail.Play();
+            }
+        }
+
+        public IEnumerator VictoryAnimation()
+        {
+            float phase = 0f;
+            Vector3 beginPos = transform.position;
+            body.isKinematic = true;
+            while (phase < 1f)
+            {
+                phase += Time.deltaTime / victoryTime;
+                Vector3 intermediate = Vector3.Lerp(beginPos, startPos, phase);
+                intermediate.z =  Mathf.Lerp(0f, 25f,  Mathf.Abs(phase - 0.5f) + 0.5f);
+                transform.position = intermediate;
+                yield return null;
+            }
+            ready = true;
         }
 
         // Update is called once per frame
@@ -58,10 +78,10 @@ namespace GyroKame
 
             if (Input.GetKey(KeyCode.A))
             {
-                body.AddForce(Vector3.left * 5f, ForceMode.Force);
+                body.AddForce(Vector3.left * 15f, ForceMode.Force);
             } else if (Input.GetKey(KeyCode.D))
             {
-                body.AddForce(Vector3.right * 5f, ForceMode.Force);
+                body.AddForce(Vector3.right * 15f, ForceMode.Force);
             }
             // for dev
             if (Input.GetKey(KeyCode.LeftArrow))

@@ -38,7 +38,7 @@ namespace GyroKame
 
         public bool Locked { get; set; }
 
-        [SerializeField] private AudioSource bounce, cleared;
+        [SerializeField] private AudioSource bounce, cleared, highlight;
 
         [SerializeField] private Coroutine flashRoutine;
 
@@ -112,6 +112,7 @@ namespace GyroKame
                 float hpLeft = (float) health / (float) maxHealth;
                 Color basicColor = Color.Lerp(flashTargetColor, originalColor, hpLeft);
                 Color flashColor = Color.white;
+                bounce.Play();
                 while (phase < 1f)
                 {
                     transform.localScale = Vector3.Lerp(Vector3.one, maxFlash, phase);
@@ -127,7 +128,40 @@ namespace GyroKame
                     material.color = Color.Lerp(flashColor, basicColor, phase);
                     yield return null;
                 }
-                bounce.Play();
+                material.color = basicColor;
+                flashRoutine = null;
+            }
+            if (flashRoutine != null)
+            {
+                StopCoroutine(flashRoutine);
+            }
+            flashRoutine = StartCoroutine(flash());
+        }
+        public void HighlightFlashBlock()
+        {
+            IEnumerator flash()
+            {
+                float phase = 0f;
+                float speed = 5f;
+                Vector3 maxFlash = Vector3.one * 2.0f;
+                Color basicColor = originalColor;
+                Color flashColor = Color.green;
+                highlight.Play();
+                while (phase < 1f)
+                {
+                    transform.localScale = Vector3.Lerp(Vector3.one, maxFlash, phase);
+                    phase += Time.deltaTime * speed;
+                    material.color = Color.Lerp(basicColor, flashColor, phase);
+                    yield return null;
+                }
+                phase = 0f;
+                while (phase < 1f)
+                {
+                    transform.localScale = Vector3.Lerp(maxFlash, Vector3.one, phase);
+                    phase += Time.deltaTime * speed;
+                    material.color = Color.Lerp(flashColor, basicColor, phase);
+                    yield return null;
+                }
                 material.color = basicColor;
                 flashRoutine = null;
             }
@@ -177,7 +211,7 @@ namespace GyroKame
                 GetComponent<Collider>().enabled = true;
                 this.gameObject.SetActive(false);
                 OnBlockDestroyed?.Invoke(this);
-                cleared.Play();
+                //cleared.Play();
             }
             StartCoroutine(animate());
             GetComponent<Collider>().enabled = false;
