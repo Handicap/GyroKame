@@ -16,15 +16,17 @@ namespace GyroKame
             Debug.Log("Level generation");
             foreach (var item in directoryTree.contents)
             {
-                CreateDirectory(item, 0);
+                 var rootDir = CreateDirectory(item, 0);
+                rootDir.gameObject.SetActive(true);
+                rootDir.ActivateChildren();
             }
         }
 
-        private void CreateDirectory(FileEntry entry, float horizontalPosition, GameDirectory parent = null)
+        private GameDirectory CreateDirectory(FileEntry entry, float horizontalPosition, GameDirectory parent = null)
         {
             var folder = Instantiate(folderPrefab);
             folder.Initialize(entry, parent, horizontalPosition);
-            Debug.Log("Created folder " + entry, folder);
+            //Debug.Log("Created folder " + entry, folder);
             //folder.Initialize()
             if (entry.contents != null && entry.contents.Count > 0)
             {
@@ -63,6 +65,7 @@ namespace GyroKame
                     */
                 }
             }
+            return folder;
         }
 
         private void CreateFile(FileEntry entry, float horizontalPosition, GameDirectory parent)

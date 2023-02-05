@@ -9,6 +9,7 @@ namespace GyroKame
 
         [SerializeField] private GameDirectory parent;
         [SerializeField] private FileEntry entry;
+        [SerializeField] private TMPro.TextMeshPro text;
 
         [SerializeField] private Vector3 originalPosition;
 
@@ -19,18 +20,21 @@ namespace GyroKame
         private float perlinSpeed = 0.5f;
         private float jitterAmount = 0.75f;
 
-        public void Initialize(FileEntry entry, GameDirectory parent, float horizontalPosition)
+        public virtual void Initialize(FileEntry entry, GameDirectory parent, float horizontalPosition)
         {
             this.parent = parent;
             this.entry = entry;
+            text.text = entry.name;
             name = entry.ToString();
             if (parent != null)
             {
                 transform.parent = parent.transform;
+                parent.AddToChildren(this);
             }
             transform.position = new Vector3(horizontalPosition, 4f * -GetDepth(0), 0);
             originalPosition = transform.position;
             perlinSeed = Random.Range(-1f, 1f);
+            gameObject.SetActive(false);
         }
 
         private int GetDepth(int currentDepth)
