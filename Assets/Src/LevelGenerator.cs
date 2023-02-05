@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using System;
+
 namespace GyroKame
 {
     public class LevelGenerator : MonoBehaviour
@@ -11,21 +13,24 @@ namespace GyroKame
         [SerializeField] private GameFile filePrefab;
         [SerializeField] private GameDirectory folderPrefab;
         [SerializeField] private float entryHorizontalDistance = 1f;
+        private List<GameEntry> entries = new List<GameEntry>();
+
+        public event Action<List<GameEntry>> OnLevelReady;
         public void GenerateLevel(FileEntries directoryTree)
         {
             Debug.Log("Level generation");
-            foreach (var item in directoryTree.contents)
-            {
-                 var rootDir = CreateDirectory(item, 0);
-                rootDir.gameObject.SetActive(true);
-                rootDir.ActivateChildren();
-            }
+            GameDirectory rootDir;
+            rootDir = CreateDirectory(directoryTree.contents[0], 0);
+            rootDir.gameObject.SetActive(true);
+            rootDir.ActivateChildren();
+            OnLevelReady?.Invoke(entries);
         }
 
         private GameDirectory CreateDirectory(FileEntry entry, float horizontalPosition, GameDirectory parent = null)
         {
             var folder = Instantiate(folderPrefab);
             folder.Initialize(entry, parent, horizontalPosition);
+            entries.Add(folder);
             //Debug.Log("Created folder " + entry, folder);
             //folder.Initialize()
             if (entry.contents != null && entry.contents.Count > 0)
@@ -73,6 +78,7 @@ namespace GyroKame
             var file = Instantiate(filePrefab);
             file.Initialize(entry, parent, horizontalPosition);
             Debug.Log("Created file " + entry, file);
+            entries.Add(file);
             //folder.Initialize()
         }
 
@@ -81,6 +87,7 @@ namespace GyroKame
             var link = Instantiate(filePrefab);
             link.Initialize(entry, parent, horizontalPosition);
             Debug.Log("Created link " + entry, link);
+            entries.Add(link);
             //folder.Initialize()
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,19 +9,30 @@ namespace GyroKame
     public class PlayerBall : MonoBehaviour
     {
         [SerializeField] private Rigidbody body;
+        [SerializeField] private float minDepth = -100f;
         private bool ready = true;
         Vector3 startGrav;
+
+        public event Action OnBallLost;
+
         // Start is called before the first frame update
         void Start()
         {
             startGrav = Physics.gravity;
-            Physics.gravity = Vector3.zero;
+            ResetBall();
         }
 
         public void Drop()
         {
             Physics.gravity = startGrav;
             ready = false;
+        }
+
+        public void ResetBall()
+        {
+            Debug.Log("Reset ball");
+            ready = true;
+            Physics.gravity = Vector3.zero;
         }
 
         // Update is called once per frame
@@ -39,6 +51,11 @@ namespace GyroKame
             {
                 Vector3 newGrav = new Vector3(Physics.gravity.x + 0.05f, Physics.gravity.y, Physics.gravity.z).normalized * 10f;
                 Physics.gravity = newGrav;
+            }
+            if (transform.position.y < minDepth)
+            {
+                OnBallLost?.Invoke();
+                ResetBall();
             }
         }
         private void OnCollisionEnter(Collision collision)

@@ -119,6 +119,41 @@ namespace GyroKame
                 Destroy(this.gameObject);
             }
             StartCoroutine(animate());
+            GetComponent<Collider>().enabled = false;
         }
+
+        public virtual void MakeVisible()
+        {
+            IEnumerator animate()
+            {
+                float phase = 0f;
+                float speed = 15f;
+                Vector3 startScale = new Vector3(0.25f, 1f, 0f);
+                while (phase < 1f)
+                {
+                    transform.localScale = Vector3.Lerp(startScale, Vector3.one, phase);
+                    phase += Time.deltaTime * speed;
+                    yield return null;
+                }
+            }
+            StartCoroutine(animate());
+        }
+        public virtual void MakeInvisible()
+        {
+            IEnumerator animate()
+            {
+                float phase = 0f;
+                float speed = 15f;
+                Vector3 startScale = new Vector3(0.25f, 1f, 0f);
+                while (phase < 1f)
+                {
+                    transform.localScale = Vector3.Lerp(Vector3.one, startScale, phase);
+                    phase += Time.deltaTime * speed;
+                    yield return null;
+                }
+            }
+            StartCoroutine(animate());
+        }
+
     }
 }
