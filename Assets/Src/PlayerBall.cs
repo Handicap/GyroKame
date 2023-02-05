@@ -15,7 +15,7 @@ namespace GyroKame
         private bool ready = true;
         Vector3 startGrav;
 
-        public event Action OnBallLost, OnBallDropped;
+        public event Action OnBallLost, OnBallDropped, OnBallReady;
 
         private Vector3 startPos;
 
@@ -50,28 +50,35 @@ namespace GyroKame
             {
                 fail.Play();
             }
+            OnBallReady?.Invoke();
         }
 
-        public IEnumerator VictoryAnimation()
+        public void VictoryAnimation()
         {
-            float phase = 0f;
-            Vector3 beginPos = transform.position;
-            body.isKinematic = true;
-            while (phase < 1f)
+            IEnumerator animation()
             {
-                phase += Time.deltaTime / victoryTime;
-                Vector3 intermediate = Vector3.Lerp(beginPos, startPos, phase);
-                intermediate.z =  Mathf.Lerp(0f, 25f,  Mathf.Abs(phase - 0.5f) + 0.5f);
-                transform.position = intermediate;
-                yield return null;
+                float phase = 0f;
+                Vector3 beginPos = transform.position;
+                body.isKinematic = true;
+                while (phase < 1f)
+                {
+                    phase += Time.deltaTime / victoryTime;
+                    Vector3 intermediate = Vector3.Lerp(beginPos, startPos, phase);
+                    intermediate.z = Mathf.Lerp(0f, 25f, Mathf.Abs(phase - 0.5f) + 0.5f);
+                    transform.position = intermediate;
+                    yield return null;
+                }
+                transform.position = startPos;
+                ready = true;
+                ResetBall();
             }
-            ready = true;
+            StartCoroutine(animation());
         }
 
         // Update is called once per frame
         void Update()
         {
-            if (Input.GetKey(KeyCode.Space) && Ready)
+            if ((Input.GetKey(KeyCode.Space) || Input.touchCount > 0) && Ready)
             {
                 Drop();
             }
@@ -82,16 +89,6 @@ namespace GyroKame
             } else if (Input.GetKey(KeyCode.D))
             {
                 body.AddForce(Vector3.right * 15f, ForceMode.Force);
-            }
-            // for dev
-            if (Input.GetKey(KeyCode.LeftArrow))
-            {
-                Vector3 newGrav = new Vector3(Physics.gravity.x - 0.15f, Physics.gravity.y, Physics.gravity.z).normalized * 10f;
-                Physics.gravity = newGrav;
-            } else if (Input.GetKey(KeyCode.RightArrow))
-            {
-                Vector3 newGrav = new Vector3(Physics.gravity.x + 0.15f, Physics.gravity.y, Physics.gravity.z).normalized * 10f;
-                Physics.gravity = newGrav;
             }
             if (transform.position.y < minDepth)
             {

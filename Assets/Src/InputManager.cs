@@ -17,8 +17,12 @@ namespace GyroKame
 
         private void Start()
         {
-            shitbox.text = "";
-            Application.logMessageReceived += Application_logMessageReceived;
+            if (shitbox != null)
+            {
+
+                shitbox.text = "";
+                Application.logMessageReceived += Application_logMessageReceived;
+            }
 
             if (Accelerometer.current != null)
             {
@@ -46,9 +50,12 @@ namespace GyroKame
             var accValue = Accelerometer.current.acceleration.ReadValue();
             //Debug.Log("ACC: " + accValue.ToString());
             var baseVec = new Vector3(1.0f, 0.0f, 1.0f);
-            accX.transform.localScale = baseVec + (Vector3.up * accValue.x);
-            accY.transform.localScale = baseVec + (Vector3.up * accValue.y);
-            accZ.transform.localScale = baseVec + (Vector3.up * accValue.z);
+            if (accX != null)
+            {
+                accX.transform.localScale = baseVec + (Vector3.up * accValue.x);
+                accY.transform.localScale = baseVec + (Vector3.up * accValue.y);
+                accZ.transform.localScale = baseVec + (Vector3.up * accValue.z);
+            }
         }
 
         private void Update()
@@ -57,6 +64,10 @@ namespace GyroKame
             if (Accelerometer.current.enabled)
             {
                 PrintAccelerometer();
+                Vector3 newGravity = Accelerometer.current.acceleration.ReadValue() * 10f;
+                newGravity.z = 0f;
+                newGravity.y = newGravity.y > 0f ? 0f : newGravity.y;
+                Physics.gravity = newGravity;
             } else
             {
                 Debug.LogError("Accelerometer unabled :L");
@@ -65,7 +76,7 @@ namespace GyroKame
 
         private void Application_logMessageReceived(string condition, string stackTrace, LogType type)
         {
-            if (previousMessage != condition)
+            if (shitbox != null && previousMessage != condition)
             {
                 shitbox.text += "\n" + condition;
             }

@@ -14,16 +14,21 @@ namespace GyroKame
         [SerializeField] private TMPro.TextMeshProUGUI objectiveText;
         [SerializeField] private TMPro.TextMeshProUGUI scoreText;
         [SerializeField] private TMPro.TextMeshProUGUI livesText;
+        [SerializeField] private GameObject gameoverPanel;
 
         [SerializeField] private GameObject startTip;
+        [SerializeField] private GameObject startTipPc;
 
         [SerializeField] private GameObject directionalHint;
 
         [SerializeField] private CameraController cameraController;
 
         private GameEntry currentTarget;
-        private List<GameEntry> currentPath;
+        private List<GameEntry> currentPath = new List<GameEntry>();
         private List<GameEntry> currentPathLeft = new List<GameEntry>();
+
+        [SerializeField] private GameEntry pointerTarget;
+        [SerializeField] private GameObject gravityHelper;
 
         List<float> levels = new List<float>();
 
@@ -43,20 +48,34 @@ namespace GyroKame
         {
             generator.OnLevelReady += Generator_OnLevelReady;
             ball.OnBallLost += Ball_OnBallLost;
+            ball.OnBallReady += ShowAnswer;
             ball.OnBallDropped += Ball_OnBallDropped;
 
             livesText.text = lives.ToString();
             scoreText.text = score.ToString();
+            gameoverPanel.SetActive(false);
             //ball.Ready = true;
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                startTip.SetActive(true);
+                startTipPc.SetActive(false);
+            }
+            else
+            {
+                startTip.SetActive(false);
+                startTipPc.SetActive(true);
+            }
         }
 
         private void Ball_OnBallDropped()
         {
             startTip.SetActive(false);
+            startTipPc.SetActive(false);
         }
 
         private void ShowAnswer()
         {
+            if (currentPath.Count < 1) return;
             ball.Ready = false;
             Debug.Log("Showing answer");
 
@@ -99,7 +118,13 @@ namespace GyroKame
                 Debug.Log("Finished answer");
                 rootDir.MakeVisible();
                 //rootDir.ActivateChildren();
-                startTip.SetActive(true);
+                if (Application.platform == RuntimePlatform.Android)
+                {
+                    startTip.SetActive(true);
+                } else
+                {
+                    startTipPc.SetActive(true);
+                }
                 currentPathLeft.Clear();
                 currentPathLeft.AddRange(currentPath);
                 ball.Ready = true;
@@ -114,10 +139,20 @@ namespace GyroKame
             {
                 item.gameObject.SetActive(false);
             }
-            lives--;
-            livesText.text = lives.ToString();
-            ShowAnswer();
-            ball.ResetBall();
+            if (lives > 0)
+            {
+                lives--;
+                livesText.text = lives.ToString();
+            }
+            if (lives < 1)
+            {
+                Debug.Log("Ran out of lives");
+                gameoverPanel.SetActive(true);
+            } else
+            {
+                //ShowAnswer();
+                ball.ResetBall();
+            }
         }
 
         private void Generator_OnLevelReady(List<GameEntry> obj, GameDirectory root)
@@ -146,18 +181,19 @@ namespace GyroKame
             }
             if (obj == currentTarget)
             {
-                score += obj.GetDepth();
+                score += obj.GetDepth() * 2;
                 Debug.Log("Target found!");
                 success.Play();
                 ball.VictoryAnimation();
+                PickTarget();
             } else if (currentPath.Contains(obj))
             {
                 cleared.Play();
+                score += 1 * obj.GetDepth();
             } else
             {
                 wrongBlock.Play();
             }
-            score += 1;
             scoreText.text = score.ToString();
         }
 
@@ -165,16 +201,36 @@ namespace GyroKame
         {
             if (currentTarget != null && currentPathLeft.Count > 0)
             {
-                var target = currentPathLeft.Last();
-                directionalHint.transform.position = Vector3.ClampMagnitude(Vector3.Lerp(ball.transform.position, target.transform.position, 0.5f), 2f);
-                directionalHint.transform.LookAt(target.transform, Vector3.forward);
+                pointerTarget = currentPathLeft.Last();
+                Vector3 midWay = Vector3.Lerp(ball.transform.position, pointerTarget.transform.position, 0.5f);
+                if (Vector3.Distance(midWay, ball.transform.position) > 3f)
+                {
+                    directionalHint.transform.position = Vector3.MoveTowards(ball.transform.position, pointerTarget.transform.position, 3f);
+                } else
+                {
+                    directionalHint.transform.position = midWay;
+                }
+                directionalHint.transform.LookAt(pointerTarget.transform, Vector3.forward);
+                
             }
+            gravityHelper.transform.LookAt(Physics.gravity * 10000f, Vector3.forward);
             /*
             if (currentPathLeft.Count > 0 && currentPathLeft.Last().transform.position.y > ball.transform.position.y)
             {
                 currentPathLeft.RemoveAt(currentPathLeft.Count - 1);
             }
             */
+            if ((Input.GetKey(KeyCode.Space) || Input.touches.Length > 0) && lives < 1)
+            {
+                lives = maxLives;
+                score = 0;
+                scoreText.text = "0";
+                livesText.text = lives.ToString();
+                ball.ResetBall();
+                PickTarget();
+                ShowAnswer();
+                gameoverPanel.SetActive(false);
+            }
         }
 
         private void PickTarget()
