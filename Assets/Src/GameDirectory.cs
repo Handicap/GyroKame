@@ -18,6 +18,7 @@ namespace GyroKame
             foreach (var item in children)
             {
                 item.gameObject.SetActive(true);
+                item.MakeVisible();
             }
         }
 

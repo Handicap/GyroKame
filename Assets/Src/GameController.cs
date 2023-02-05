@@ -33,10 +33,19 @@ namespace GyroKame
             PickTarget();
         }
 
+        private void Update()
+        {
+            if (currentTarget != null)
+            {
+                directionalHint.transform.position = Vector3.MoveTowards(ball.transform.position, currentTarget.transform.position, 3);
+            }
+        }
+
         private void PickTarget()
         {
             int randomIndex = Random.Range(0, entries.Count);
-            Debug.Log("Random target is " + entries[randomIndex]);
+            currentTarget = entries[randomIndex];
+            Debug.Log("Random target is " + currentTarget);
         }
     }
 }

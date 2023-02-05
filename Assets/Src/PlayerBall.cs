@@ -15,10 +15,13 @@ namespace GyroKame
 
         public event Action OnBallLost;
 
+        private Vector3 startPos;
+
         // Start is called before the first frame update
         void Start()
         {
             startGrav = Physics.gravity;
+            startPos = transform.position;
             ResetBall();
         }
 
@@ -33,6 +36,7 @@ namespace GyroKame
             Debug.Log("Reset ball");
             ready = true;
             Physics.gravity = Vector3.zero;
+            transform.position = startPos;
         }
 
         // Update is called once per frame
